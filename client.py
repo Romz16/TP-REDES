@@ -78,47 +78,28 @@ font = pygame.font.Font(None, 36)
 #setup a rectangle for "Play Again" Option
 again_rect = Rect(window_width // 2 - 80, window_height // 2, 160, 50)
 
-def draw_game_over(winner):
-    print("CHEGOU NO GAME OVER")
-    if winner != "E":
-       end_text = "Player " + winner + " wins!"
-    else:
-       end_text = "EMPATOU!"
-    
-    end_img = font.render(end_text, True, RED)
-    pygame.draw.rect(screen, BG_COLOR, (window_width // 2 - 100, window_height // 2 - 60, 200, 50))
-    screen.blit(end_img, (window_width // 2 - 100,  window_height // 2 - 50))
-    
-    print("BUCETINHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-    resp = messagebox.askyesno("VOCE È GAY","REINICIAR JOGO?")
-    again_text = 'Play Again?'
-    again_img = font.render(again_text, True, RED)
-    pygame.draw.rect(screen, BG_COLOR, again_rect)
-    screen.blit(again_img, (window_width // 2 - 80,  window_height // 2 + 10))
-    
-             
-    
-def texto_vitoria(v):
-    print("AAAAAAAAAA")
-    arial = pygame.font.SysFont('arial', 70)
-    mensagem = 'JOGADOR {} VENCEU'.format(v)
-
-    if v == 'EMPATE':
-        mens_vitoria = arial.render('DEU VELHA', True, (0, 255, 0), 0)
-        screen.blit(mens_vitoria, (115, 265))
-    else:
-        mens_vitoria = arial.render(mensagem, True, (0, 255, 0), 0)
-        screen.blit(mens_vitoria, (0, 265))
              
 #RESTART
-def reset():
-	screen.fill( BG_COLOR )
-	for row in range(3):
-		for col in range(3):
-			board[row][col] = 0
+#ssssssssssssssssssss
+def reset_board():
+    # Define todas as posições do tabuleiro como vazio
+    for i in range(3):
+        for j in range(3):
+            board[i][j] = ' '
+
+    # Limpa a tela do jogo
+    screen.fill((255, 255, 255)) # Define a cor de fundo para branco
+
+    # Desenha as linhas do tabuleiro novamente
+    pygame.draw.line(screen, (0, 0, 0), (100, 0), (100, 300), 2)
+    pygame.draw.line(screen, (0, 0, 0), (200, 0), (200, 300), 2)
+    pygame.draw.line(screen, (0, 0, 0), (0, 100), (300, 100), 2)
+    pygame.draw.line(screen, (0, 0, 0), (0, 200), (300, 200), 2)
+
+    # Atualiza a tela do jogo
+    pygame.display.flip()
    
 # Roda o jogo da velha
-
 
 
         
@@ -203,6 +184,9 @@ def run_game():
             resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
         if bool(resp)== False:
             quit()
+        else:
+            reset_board()
+            game_status ="C"
            
         pygame.display.flip()
        
