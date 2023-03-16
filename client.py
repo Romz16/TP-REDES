@@ -85,7 +85,7 @@ def reset_board():
     # Define todas as posições do tabuleiro como vazio
     for i in range(3):
         for j in range(3):
-            board[i][j] = ' '
+            board[i][j] = ''
 
     # Limpa a tela do jogo
     screen.fill((255, 255, 255)) # Define a cor de fundo para branco
@@ -176,18 +176,30 @@ def run_game():
         if game_status == "X" or "O":
             print(f'{game_status} VENCEU')
             pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR', title='VENCEDOR', button='OK')
-            resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
+            
         
         elif game_status =="E":
             print('EMPATE')
             pyautogui.alert(text=f'Não houve vencedor, EMPATE!', title='EMPATE', button='OK')
-            resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
+        
+        resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
+        
         if bool(resp)== False:
+            s.send("N".encode())
             quit()
         else:
-            reset_board()
-            game_status ="C"
-           
+            s.send("S".encode())
+            server_resp = s.recv(1).decode()
+            if server_resp =="S":
+                reset_board()
+                game_status ="C"
+            else:
+                pyautogui.alert(text=f'O outro jogador não quer reiniciar partida', title='RESULTADO', button='OK')
+                quit()
+        print("ULTIMO GAME STATUS",game_status)
+        for i in range(3):
+            for j in range(3):
+                print(f'"{board[i][j]}"')
         pygame.display.flip()
        
 #pyautogui.alert(text='Digite um servidor válido', title='Erro', button='OK')

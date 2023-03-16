@@ -88,6 +88,16 @@ while True:
     
         # Envie uma mensagem para ambos os jogadores com o resultado do jogo
     send_all(game_status)
+    if game_status != "C":
+        data = cliente1_socket.recv(1).decode()
+        data2 = cliente2_socket.recv(1).decode()
+        if data=="S" and data2=="S":
+            send_all("S")
+            board = ['', '', '',
+                     '', '', '',
+                     '', '', '']
+        else:
+            send_all("N")
     #se n for Continuar, recebe dos dois jogadores sim ou não, caso algum tenha digitado não o jogo fecha 
     print(f"Jogada recebida: {row}{col}")
     
