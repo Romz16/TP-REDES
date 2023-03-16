@@ -1,71 +1,95 @@
 import socket
+import random
 import threading
-import sys
-import random 
 
-# Server IP and port
-IP = "127.0.0.1"
+HOST = "127.0.0.1"
+
 PORT = 55555
-list = ["O","X"]
-turn = random.choice(list)
 
-# Socket type and options
-server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# Inicializa o tabuleiro do jogo da velha
+board = ['', '', '',
+         '', '', '',
+         '', '', '']
+#conexões 
+servidor_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM) #IPV4 TCP
+servidor_socket.bind((HOST,PORT))
+clients_sockets = []
+servidor_socket.listen(2)
+print("aguardando conexão dois  clientes")
 
-server_socket.bind((IP, PORT))
-server_socket.listen()
+# Aceita a conexão do primeiro cliente
+cliente1_socket, cliente1_endereco = servidor_socket.accept()
+print(f'Conexão estabelecida com {cliente1_endereco}')
 
-# dictionary of client sockets and their nicknames
-clients = {}
-
-# debuggin
-print(f"Listening for connections on {IP}:{PORT}...")
-
-
-# Sending Messages To All Connected Clients
-def broadcast(message, client_socket):
-    # Send messages to all clients except to the original sender
-    for client in clients.keys():
-        if client is not client_socket:
-            client.send(message.encode("utf-8"))
+# Aceita a conexão do segundo cliente
+cliente2_socket, cliente2_endereco = servidor_socket.accept()
+print(f'Conexão estabelecida com {cliente2_endereco}')
 
 
-# Function to be called per client
-def handle(client_socket):
-    while True:
-        message = client_socket.recv(1024).decode("utf-8")
-        print(message)
-        broadcast(message, client_socket)
-        if "!exit" in message:
-            client_socket.close()
-            broadcast("{} left!".format(clients[client_socket]), client_socket)
-            clients.pop(client_socket)
-            print(clients)
-            sys.exit()
+def send_all(parametro):
+    cliente1_socket.send(parametro.encode())
+    cliente2_socket.send(parametro.encode())
+
+#Envia para ambos os jogadores com qual simbolo ele irá jogar 
+def send_player_symbols():
+    global turn,player1_symbol,player2_symbol
+    symbols = random.sample(['X', 'O'], k=2)
+    player1_symbol = symbols[0]
+    player2_symbol = symbols[1]
+    print(f"Player 1 will play with symbol {player1_symbol}")
+    print(f"Player 2 will play with symbol {player2_symbol}")
+    cliente1_socket.send(player1_symbol.encode())
+    cliente2_socket.send(player2_symbol.encode())
+    turn = player1_symbol
+
+#Verifica se alguem venceu ou perdeu 
+
+def check_game_status():
+    # verifica todas as combinações possíveis de vitória e empate
+    for i in range(3):
+        if (board[i*3] == board[i*3+1] == board[i*3+2] != '') : return board[i*3]
+        if (board[i] == board[i+3] == board[i+6] != ''): return board[i]  # retorna o símbolo do jogador vencedor
+
+    if (board[0] == board[4] == board[8] != '') \
+    or (board[2] == board[4] == board[6] != ''):
+        return board[4]  # retorna o símbolo do jogador vencedor
+
+    if all([cell != '' for cell in board]):
+        return "E"  # retorna empate se não houver jogadas disponíveis
+
+    return "C"  # retorna continuar se o jogo ainda não acabou
+       
+send_player_symbols()
+
+#Envia Quem deverá começar a partida 
+first_turn_message = f"{turn}"
+send_all(first_turn_message)
+
+def receber_jogada(turn, player_symbol, socket_atual, socket_oponente, board):
+    data = socket_atual.recv(3).decode()
+    coordinates = data.split('-')
+    row = int(coordinates[0])
+    col = int(coordinates[1])
+    board[row * 3 + col] = player_symbol
+    socket_oponente.send(data.encode())
+    turn = player2_symbol if turn == player1_symbol else player1_symbol
+    return (turn, row, col)
 
 
-# Receiving / Listening Function
-def receive():
-    global turn
-    while True:
-        # Accept Connection
-        client_socket, address = server_socket.accept()
-        print("Connected with {}".format(str(address)))
-        client_socket.send(turn.encode('utf-8'))
-        nickname = f'player {turn}'
-        if turn == "X":
-            turn = "O"
-        elif turn == "O":
-            turn = "X"
-        # # Request And Store Nickname
-        # client_socket.send("/id".encode("utf-8"))
-        # nickname = client_socket.recv(1024).decode("utf-8")
-        # Add client info to the dictionary
-        clients.update({client_socket: nickname})
-        # Start Handling Thread For Client
-        thread = threading.Thread(target=handle, args=(client_socket,))
-        thread.start()
-
-
-receive()
+while True:
+    # Recebe a jogada do jogador atual
+    if turn == player1_symbol:
+        turn, row, col = receber_jogada(turn, player1_symbol, cliente1_socket, cliente2_socket, board)
+    else:
+        turn, row, col = receber_jogada(turn, player2_symbol, cliente2_socket, cliente1_socket, board)
+    
+    #Verifica se o jogo acabou
+    game_status = check_game_status()
+    
+        # Envie uma mensagem para ambos os jogadores com o resultado do jogo
+    send_all(game_status)
+    #se n for Continuar, recebe dos dois jogadores sim ou não, caso algum tenha digitado não o jogo fecha 
+    print(f"Jogada recebida: {row}{col}")
+    
+        
+    
