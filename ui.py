@@ -1,222 +1,213 @@
-import sys
-from PySide2.QtWidgets import QWidget, QGridLayout, QPushButton, QLabel
-from PySide2.QtWidgets import QMessageBox
-from PySide2.QtWidgets import QApplication
-from PySide2.QtCore import Qt
-import socket, threading
+from queue import Queue
+from tkinter import messagebox
+import pygame
+import socket
+import pyautogui
+from pygame.locals import *
+# import os
+# os.environ['SDL_VIDEODRIVER']='dummy'
+
+HOST = "127.0.0.1"
+PORT = 55555
+
+WAIT_MSG = "[SERVER] is waiting for another player..."
+
+s = socket.socket(socket.AF_INET,socket.SOCK_STREAM) #IPV4 TCP
+s.connect((HOST,PORT))
+print(f"You connected to {HOST}")
+
+# Recebe o símbolo do jogador
+symbol = s.recv(1).decode()
+print(f"You will play with symbol {symbol}")
+
+# Recebe o turno do servidor
+first_turn = s.recv(1).decode()
+print(f"First turn is for {first_turn}")
+
+# Define o título da janela do jogo
+pygame.display.set_caption(f"Jogo da Velha - Jogador {symbol}")
+
+# Largura e altura de cada célula
+cell_width = 200
+cell_height = 200
+
+# Tamanho da janela do jogo
+window_width = cell_width * 3
+window_height = cell_height * 3
+
+#Cores
+SQUARE_SIZE = 200
+CIRCLE_RADIUS = 60
+CIRCLE_WIDTH = 15
+CROSS_WIDTH = 25
+SPACE = 55
+# rgb: red green blue
+RED = (255, 0, 0)
+BG_COLOR = (28, 170, 156)
+LINE_COLOR = (23, 145, 135)
+CIRCLE_COLOR = (239, 231, 200)
+CROSS_COLOR = (66, 66, 66)
+
+# Inicializa o pygame
+pygame.init()
+# Lista que representa o tabuleiro do jogo
+board = [['', '', ''], ['', '', ''], ['', '', '']]
+
+# Cria a janela do jogo
+screen = pygame.display.set_mode((window_width, window_height))
+
+#Desenha tela
+def draw_board():
+    # Limpa a tela
+    screen.fill(BG_COLOR)
+    
+    for row in range(3):
+        for col in range(3):
+            # Desenha o quadrado branco da célula
+            pygame.draw.rect(screen, LINE_COLOR, (col * cell_width, row * cell_height, cell_width, cell_height), 2)
+            # Desenha a marca (X ou O) na célula, se houver
+            if board[row][col] == 'X':
+                pygame.draw.line(screen, CROSS_COLOR, (col * SQUARE_SIZE + SPACE, row * SQUARE_SIZE + SQUARE_SIZE - SPACE), (col * SQUARE_SIZE + SQUARE_SIZE - SPACE, row * SQUARE_SIZE + SPACE), CROSS_WIDTH )
+                pygame.draw.line(screen, CROSS_COLOR, (col * SQUARE_SIZE + SPACE, row * SQUARE_SIZE + SPACE), (col * SQUARE_SIZE + SQUARE_SIZE - SPACE, row * SQUARE_SIZE + SQUARE_SIZE - SPACE), CROSS_WIDTH )
+            elif board[row][col] == 'O':
+                pygame.draw.circle(screen, CIRCLE_COLOR, (int( col * SQUARE_SIZE + SQUARE_SIZE//2 ), int( row * SQUARE_SIZE + SQUARE_SIZE//2 )), CIRCLE_RADIUS, CIRCLE_WIDTH )
 
 
-class SocketChat:
-    def __init__(self):
-        self.nickname = "Hossam"
-        # Server Ip and Port
-        self.IP = "127.0.0.1"
-        self.PORT = 55555
-        self.client_socket = socket.socket(
-            family=socket.AF_INET, type=socket.SOCK_STREAM
-        )
+# Definição da fonte
+font = pygame.font.Font(None, 36)
+#setup a rectangle for "Play Again" Option
+again_rect = Rect(window_width // 2 - 80, window_height // 2, 160, 50)
 
-    def receive(self):
-        message = self.client_socket.recv(1024).decode("utf-8")
-        return message
+def draw_game_over(winner):
+    print("CHEGOU NO GAME OVER")
+    if winner != "E":
+       end_text = "Player " + winner + " wins!"
+    else:
+       end_text = "EMPATOU!"
+    
+    end_img = font.render(end_text, True, RED)
+    pygame.draw.rect(screen, BG_COLOR, (window_width // 2 - 100, window_height // 2 - 60, 200, 50))
+    screen.blit(end_img, (window_width // 2 - 100,  window_height // 2 - 50))
+    
+    print("BUCETINHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    resp = messagebox.askyesno("VOCE È GAY","REINICIAR JOGO?")
+    again_text = 'Play Again?'
+    again_img = font.render(again_text, True, RED)
+    pygame.draw.rect(screen, BG_COLOR, again_rect)
+    screen.blit(again_img, (window_width // 2 - 80,  window_height // 2 + 10))
+    
+             
+    
+def texto_vitoria(v):
+    print("AAAAAAAAAA")
+    arial = pygame.font.SysFont('arial', 70)
+    mensagem = 'JOGADOR {} VENCEU'.format(v)
 
-    def write(self, msg: str):
-        message = msg
-        self.client_socket.send(message.encode("utf-8"))
-        if message.startswith("/"):
-            self.handleCommand(message[1:])
+    if v == 'EMPATE':
+        mens_vitoria = arial.render('DEU VELHA', True, (0, 255, 0), 0)
+        screen.blit(mens_vitoria, (115, 265))
+    else:
+        mens_vitoria = arial.render(mensagem, True, (0, 255, 0), 0)
+        screen.blit(mens_vitoria, (0, 265))
+             
+#RESTART
+def reset():
+	screen.fill( BG_COLOR )
+	for row in range(3):
+		for col in range(3):
+			board[row][col] = 0
+   
+# Roda o jogo da velha
 
-    def handleCommand(self, command: str):
-        if command == "exit":
-            return 404  # status code for exit
 
 
-class Example(QWidget):
-
-    winning_states = [
-        [(0, 0), (0, 1), (0, 2)],
-        [(1, 0), (1, 1), (1, 2)],
-        [(2, 0), (2, 1), (2, 2)],
-        [(0, 0), (1, 0), (2, 0)],
-        [(0, 1), (1, 1), (2, 1)],
-        [(0, 2), (1, 2), (2, 2)],
-        [(0, 0), (1, 1), (2, 2)],
-        [(0, 2), (1, 1), (2, 0)],
-    ]
-
-    def __init__(self):
-        super().__init__()
-        self.player = ""
-        self.turn = "X"
-        self.initUI()
-        self.x_score = 0
-        self.y_score = 0
-        self.chat_object = SocketChat()
-        self.chat_object.client_socket.connect(
-            (self.chat_object.IP, self.chat_object.PORT)
-        )
-        self.player = self.chat_object.receive()
-        print(f"player {self.player}")
-        self.player_label.setText("{}\nPlayer".format(self.player))
-
-        if self.player != self.turn:
-            self.otherPalyerTurn()
-
-    def solicitar_reinicio_partida(self):
-        # Estabelece a conexão com o servidor
-      
-        # Envia a mensagem de solicitação de reinício
-        mensagem = ""
-
-        self.chat_object.client_socket.send(mensagem.encode())
-
-        # Recebe a resposta do servidor
-        resposta = self.chat_object.client_socket.recv(1024).decode()
-
-        # Fecha a conexão com o servidor
-        self.chat_object.client_socket.close()
-
-        # Retorna a resposta recebida do servidor
-        return resposta
-
-    def on_button_click(self):
         
+def run_game():
+    turn = first_turn
+    game_status = "C"
+    
+    # Loop principal do jogo
+    while True:
+        draw_board()
         
-        reply = QMessageBox.question(self, "Reiniciar Jogo", "Deseja reiniciar o jogo?",
-                                     QMessageBox.Yes | QMessageBox.No)
-        reply =self.solicitar_reinicio_partida()
-        print("ESPERANDO RESPOSTA SERVER")
-        
-        if reply == "SIM":
-            self.newGame()
-            print("Jogo reiniciado!")
-            self.otherPalyerTurn()
-        else:
-            # código para continuar o jogo
-            print("Continuando o jogo...")
-            
-        
-            
-    def initUI(self):
-        self.game_size = 3
-        self.buttons = [
-            [],
-            [],
-            [],
-        ]
-        grid = QGridLayout()
-        self.setLayout(grid)
-
-        # buttons
-        for i in range(self.game_size):
-            for j in range(self.game_size):
-                button = QPushButton()
-                button.setFixedSize(200, 200)
-                button.clicked.connect(self.takeTurn(button, i, j))
-                font = button.font()
-                font.setPointSize(60)
-                button.setFont(font)
-                grid.addWidget(button, i, j)
-                self.buttons[i].append(button)
-
-        # turn label
-        self.turn_label = QLabel("{}\nTurn".format(self.turn))
-        self.player_label = QLabel("{}\nPlayer".format(self.player))
-        font = self.turn_label.font()
-        font.setPointSize(20)
-        self.turn_label.setFont(font)
-        grid.addWidget(self.turn_label, self.game_size + 1, 0)
-        grid.addWidget(self.player_label, self.game_size + 2, 0)
-        self.turn_label.setAlignment(Qt.AlignCenter)
-
-        # newgame button
-        button = QPushButton("New Game / Reset")
-        font = button.font()
-        font.setPointSize(15)
-        button.setFont(font)
-        button.clicked.connect(self.on_button_click)
-        grid.addWidget(button, self.game_size + 1, 1)
-
-        # who wins label
-        self.player_won_label = QLabel()
-        font = self.player_won_label.font()
-        font.setPointSize(15)
-        self.player_won_label.setFont(font)
-        grid.addWidget(self.player_won_label, self.game_size + 1, 2)
-        self.player_won_label.setAlignment(Qt.AlignCenter)
-
-    def newGame(self):
-        for row in self.buttons:
-            for btn in row:
-                btn.setText("")
-
-    def checkGame(self):
-        win = ""
-        for win_state in Example.winning_states:
-            i, j = win_state[0]
-            state = self.buttons[i][j].text()
-            if state == "":
-                continue
-            for i, j in win_state:
-                if state != self.buttons[i][j].text():
-                    break
+        if game_status =="C":
+      #verifica se o turno atual é do cliente 
+            if turn == symbol:
+                jogada_valida = False
+                while not jogada_valida:
+                    draw_board()
+                    pygame.display.update()
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            quit()
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                                # Obtém a posição do clique do mouse
+                            pos = pygame.mouse.get_pos()
+                                # Calcula a linha e coluna da célula clicada
+                            col = pos[0] // cell_width
+                            row = pos[1] // cell_height
+                                # Marca a célula com o símbolo do jogador atual
+                            if board[row][col] == '' and game_status =="C":
+                                board[row][col] = symbol
+                            else:
+                                print("JOGADA INVALIDA")
+                                continue
+                                # Atualiza a tela com o novo estado do jogo
+                            jogada_valida = True
+                            send_data = f'{row}-{col}'.encode()
+                            s.send(send_data)             
+                        
+                            draw_board()
+                            pygame.display.update()
+                            #troca turnos 
+                            if turn == 'X':
+                                turn= 'O' 
+                            else :
+                                turn = 'X'
             else:
-                win = state
-                print(f"'{win}' wins")
-                self.player_won_label.setText("{} has won".format(win))
-                self.newGame()
-
-        if win == "":
-            empty = False
-            for row in self.buttons:
-                for btn in row:
-                    if btn.text() == "":
-                        empty = True
-
-            if not empty:
-                print("draw")
-                self.newGame()
-
-    def _otherPalyerTurn(self):
-        message = self.chat_object.receive()
-        i, j = map(lambda x: int(x), message.split(" "))
-        self.buttons[i][j].setText(self.turn)
-        self.toggle_turn()
-        self.checkGame()
-
-    def otherPalyerTurn(self):
-        threading.Thread(target=self._otherPalyerTurn).start()
-
-    def toggle_turn(self):
-        if self.turn == "X":
-            self.turn = "O"
-        else:
-            self.turn = "X"
-        self.turn_label.setText("{}\nTurn".format(self.turn))
-
-    def endTurn(self):
-        self.toggle_turn()
-        self.checkGame()
-        self.otherPalyerTurn()
-
-    def takeTurn(self, button: QPushButton, i, j):
-        def action():
-            if self.player != self.turn:
-                return
-            if button.text() == "" and button.text() != self.player:
-                button.setText(self.player)
-                self.chat_object.write(f"{i} {j}")
-                self.endTurn()
-
-        return action
-
-
-def main():
-    app = QApplication([])
-    ex = Example()
-    ex.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
+                print("ENTREI PAPAI")
+                draw_board()
+                pygame.display.update()
+                jogada_oponente = s.recv(3).decode()
+                print("JOGADA ",jogada_oponente)
+                coordinates = jogada_oponente.split('-')
+                print("Coordenadas ",coordinates)
+                row, col = int(coordinates[0]), int(coordinates[1])
+                
+                if board[row][col] == '':
+                        board[row][col] = turn
+                else:
+                    print("JOGADA INVALIDA")
+                    continue
+                draw_board()
+                pygame.display.update()
+                    #troca turnos 
+                if turn == 'X':
+                    turn = 'O' 
+                else :
+                    turn = 'X'
+                    
+            game_status = s.recv(1).decode()
+            if game_status =="C": continue
+        
+        print(f"Game status: {game_status}")
+        if game_status == "X" or "O":
+            print(f'{game_status} VENCEU')
+            pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR', title='VENCEDOR', button='OK')
+            resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
+        
+        elif game_status =="E":
+            print('EMPATE')
+            pyautogui.alert(text=f'Não houve vencedor, EMPATE!', title='EMPATE', button='OK')
+            resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
+        if bool(resp)== False:
+            quit()
+           
+        pygame.display.flip()
+       
+#pyautogui.alert(text='Digite um servidor válido', title='Erro', button='OK')
+# Inicia o jogo
+draw_board()
+pygame.display.update()
+run_game()
