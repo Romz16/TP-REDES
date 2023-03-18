@@ -1,13 +1,9 @@
-from queue import Queue
-from tkinter import messagebox
 import pygame
+from tkinter import messagebox
 import socket
 import pyautogui
 from pygame.locals import *
 from playsound import playsound
-
-# import os
-# os.environ['SDL_VIDEODRIVER']='dummy'
 
 HOST = "127.0.0.1"
 PORT = 55555
@@ -106,18 +102,16 @@ def reset_board():
 
         
 def run_game():
-    pygame.mixer.music.load('Inicio.mp3')
-    pygame.mixer.music.play()
-    pygame.mixer.music.load('Intro.mp3')
-    pygame.mixer.music.play()
     turn = first_turn
     game_status = "C"
-    
+    pygame.mixer.music.load('sons/Inicio.mp3')
+    pygame.mixer.music.play()
+    pygame.mixer.music.load('sons/Intro.mp3')
+    pygame.mixer.music.play()
     # Loop principal do jogo
     while True:
-       
         draw_board()
-        
+      #Verifica estado do jogo 
         if game_status =="C":
       #verifica se o turno atual é do cliente 
             if turn == symbol:
@@ -153,6 +147,7 @@ def run_game():
                                 turn= 'O' 
                             else :
                                 turn = 'X'
+            #Espera jogada do opnonete
             else:
                 draw_board()
                 pygame.display.update()
@@ -178,14 +173,14 @@ def run_game():
         
         print(f"Game status: {game_status}")
         if game_status == "X" or game_status == "O":
-            pygame.mixer.music.load('Final.mp3')
+            pygame.mixer.music.load('sons/Final.mp3')
             pygame.mixer.music.play()
             print(f'{game_status} VENCEU')
             pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR', title='VENCEDOR', button='OK')
             
         
         if game_status =="E":
-            pygame.mixer.music.load('Empate.mp3')
+            pygame.mixer.music.load('sons/Empate.mp3')
             pygame.mixer.music.play()
             pyautogui.alert(text=f'Não houve vencedor, EMPATE!', title='EMPATE', button='OK')
         
@@ -211,7 +206,6 @@ def run_game():
        
 #pyautogui.alert(text='Digite um servidor válido', title='Erro', button='OK')
 # Inicia o jogo
-
 draw_board()
 pygame.display.update()
 run_game()

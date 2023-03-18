@@ -85,7 +85,6 @@ while True:
     
     #Verifica se o jogo acabou
     game_status = check_game_status()
-    
         # Envie uma mensagem para ambos os jogadores com o resultado do jogo
     send_all(game_status)
     if game_status != "C":
