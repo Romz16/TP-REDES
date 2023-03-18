@@ -40,7 +40,7 @@ def send_player_symbols():
     print(f"Player 2 will play with symbol {player2_symbol}")
     cliente1_socket.send(player1_symbol.encode())
     cliente2_socket.send(player2_symbol.encode())
-    turn = player1_symbol
+    turn = random.choice([player1_symbol, player2_symbol])
 
 #Verifica se alguem venceu ou perdeu 
 
