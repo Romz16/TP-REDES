@@ -4,8 +4,8 @@ import socket
 import pyautogui
 from pygame.locals import *
 from playsound import playsound
-
-HOST = "127.0.0.1"
+HOST = "192.168.2.8"
+#HOST = "127.0.0.1"
 PORT = 55555
 
 WAIT_MSG = "[SERVER] is waiting for another player..."
@@ -172,22 +172,24 @@ def run_game():
                     turn = 'X'
                     
             game_status = s.recv(1).decode()
-            if game_status =="C": continue
+            if game_status =="C":
+                 if game_status == "X" or game_status == "O":
+                    pygame.mixer.music.load('sons/Final.mp3')
+                    pygame.mixer.music.play()
+                    print(f'{game_status} VENCEU')
+                    if symbol == game_status:
+                        pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ VENCEU', title='VENCEDOR', button='OK')
+                    else:
+                        pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ PERDEU', title='VENCEDOR', button='OK')
+                    
+                 if game_status =="E":
+                    pygame.mixer.music.load('sons/Empate.mp3')
+                    pygame.mixer.music.play()
+                    pyautogui.alert(text=f'Não houve vencedor, EMPATE!', title='EMPATE', button='OK')
+                 continue
         
         print(f"Game status: {game_status}")
-        if game_status == "X" or game_status == "O":
-            pygame.mixer.music.load('sons/Final.mp3')
-            pygame.mixer.music.play()
-            print(f'{game_status} VENCEU')
-            if symbol == game_status:
-                pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ VENCEU', title='VENCEDOR', button='OK')
-            else:
-                pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ PERDEU', title='VENCEDOR', button='OK')
-            
-        if game_status =="E":
-            pygame.mixer.music.load('sons/Empate.mp3')
-            pygame.mixer.music.play()
-            pyautogui.alert(text=f'Não houve vencedor, EMPATE!', title='EMPATE', button='OK')
+       
         
         resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
         
