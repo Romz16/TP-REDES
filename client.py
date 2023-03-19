@@ -103,11 +103,14 @@ def reset_board():
         
 def run_game():
     turn = first_turn
+    pyautogui.alert(text=f'JOGADOR {first_turn} É O PRIMEIRO A JOGAR', title='PRIMEIRO_TURNO', button='OK')
     game_status = "C"
     pygame.mixer.music.load('sons/Inicio.mp3')
     pygame.mixer.music.play()
     pygame.mixer.music.load('sons/Intro.mp3')
     pygame.mixer.music.play()
+    
+    
     # Loop principal do jogo
     while True:
         draw_board()
@@ -135,7 +138,7 @@ def run_game():
                             else:
                                 print("JOGADA INVALIDA")
                                 continue
-                                # Atualiza a tela com o novo estado do jogo
+                            # Atualiza a tela com o novo estado do jogo
                             jogada_valida = True
                             send_data = f'{row}-{col}'.encode()
                             s.send(send_data)             
@@ -176,9 +179,11 @@ def run_game():
             pygame.mixer.music.load('sons/Final.mp3')
             pygame.mixer.music.play()
             print(f'{game_status} VENCEU')
-            pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR', title='VENCEDOR', button='OK')
+            if symbol == game_status:
+                pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ VENCEU', title='VENCEDOR', button='OK')
+            else:
+                pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ PERDEU', title='VENCEDOR', button='OK')
             
-        
         if game_status =="E":
             pygame.mixer.music.load('sons/Empate.mp3')
             pygame.mixer.music.play()
@@ -195,6 +200,8 @@ def run_game():
             if server_resp =="S":
                 reset_board()
                 game_status ="C"
+                jogada_valida = False
+                pyautogui.alert(text=f'JOGADOR {turn} É O PRIMEIRO A JOGAR', title='PRIMEIRO_TURNO', button='OK')
             else:
                 pyautogui.alert(text=f'O outro jogador não quer reiniciar partida', title='RESULTADO', button='OK')
                 quit()
@@ -204,7 +211,7 @@ def run_game():
                 print(f'"{board[i][j]}"')
         pygame.display.flip()
        
-#pyautogui.alert(text='Digite um servidor válido', title='Erro', button='OK')
+
 # Inicia o jogo
 draw_board()
 pygame.display.update()

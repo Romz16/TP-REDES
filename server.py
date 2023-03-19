@@ -1,6 +1,6 @@
 import socket
 import random
-import threading
+
 
 HOST = "127.0.0.1"
 
@@ -85,7 +85,8 @@ while True:
     
     #Verifica se o jogo acabou
     game_status = check_game_status()
-        # Envie uma mensagem para ambos os jogadores com o resultado do jogo
+    
+    # Envie uma mensagem para ambos os jogadores com o resultado do jogo
     send_all(game_status)
     if game_status != "C":
         data = cliente1_socket.recv(1).decode()
