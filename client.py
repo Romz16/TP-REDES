@@ -1,12 +1,11 @@
 import pygame
-from tkinter import messagebox
 import socket
 import pyautogui
 from pygame.locals import *
 from playsound import playsound
-#HOST = "192.168.2.8"
+#HOST = "200.239.139.118"
 HOST = "127.0.0.1"
-PORT = 55555
+PORT = 55554
 
 WAIT_MSG = "[SERVER] is waiting for another player..."
 
@@ -78,7 +77,7 @@ again_rect = Rect(window_width // 2 - 80, window_height // 2, 160, 50)
 
              
 #RESTART
-#ssssssssssssssssssss
+
 def reset_board():
     # Define todas as posições do tabuleiro como vazio
     for i in range(3):
@@ -102,6 +101,7 @@ def reset_board():
 
         
 def run_game():
+    #Informa Primeiro jogador
     turn = first_turn
     pyautogui.alert(text=f'JOGADOR {first_turn} É O PRIMEIRO A JOGAR', title='PRIMEIRO_TURNO', button='OK')
     game_status = "C"
@@ -146,7 +146,7 @@ def run_game():
                             pygame.display.update()
                             pygame.mixer.music.load('sons/Jogada.mp3')
                             pygame.mixer.music.play()
-                            #troca turnos 
+                            #Troca turnos 
                             if turn == 'X':
                                 turn= 'O' 
                             else :
@@ -173,44 +173,43 @@ def run_game():
                     turn = 'O' 
                 else :
                     turn = 'X'
-                    
+            #RECEBE STATUS DA PARTIDA        
             game_status = s.recv(1).decode()
-            if game_status !="C":
-                print(f"Game status: {game_status}")
+        #Caso ocorra empate  ou alguem vença
+        else:        
+            print(f"Game status: {game_status}")
                 
-                if game_status == "X" or game_status == "O":
-                    pygame.mixer.music.load('sons/Final.mp3')
-                    pygame.mixer.music.play()
-                    print(f'{game_status} VENCEU')
-                    if symbol == game_status:
-                        #messagebox.showinfo("VENCEDOR",f'Jogador{game_status}É o vencedor!!\n VOCE VENCEU')
-                        pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ VENCEU', title='VENCEDOR', button='OK')
-                    else:
-                        #messagebox.showinfo("VENCEDOR",f'Jogador{game_status}É o vencedor!!\n VOCE PERDEU')
-                        pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ PERDEU', title='VENCEDOR', button='OK')
-                    
-                if game_status =="E":
-                    pygame.mixer.music.load('sons/Empate.mp3')
-                    pygame.mixer.music.play()
-                    messagebox.showinfo("VENCEDOR",f'Jogador{game_status}É o vencedor!!\n VOCE PERDEU')
-                
-                resp = messagebox.askyesno("RESET","REINICIAR JOGO?")
-                
-                if bool(resp)== False:
-                    s.send("N".encode())
-                    quit()
+            if game_status == "X" or game_status == "O":
+                pygame.mixer.music.load('sons/Final.mp3')
+                pygame.mixer.music.play()
+                print(f'{game_status} VENCEU')
+                if symbol == game_status:
+                   
+                    pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ VENCEU', title='VENCEDOR', button='OK')
                 else:
-                    s.send("S".encode())
-                    server_resp = s.recv(1).decode()
-                    if server_resp =="S":
-                        reset_board()
-                        game_status ="C"
-                        jogada_valida = False
-                        pyautogui.alert(text=f'JOGADOR {turn} É O PRIMEIRO A JOGAR', title='PRIMEIRO_TURNO', button='OK')
-                    else:
-                        pyautogui.alert(text=f'O outro jogador não quer reiniciar partida', title='RESULTADO', button='OK')
-                        quit()
-        print("ULTIMO GAME STATUS",game_status)
+         
+                    pyautogui.alert(text=f'JOGADOR {game_status} É O VENCEDOR!!\n VOCÊ PERDEU', title='VENCEDOR', button='OK')
+                
+            if game_status =="E":
+                pygame.mixer.music.load('sons/Empate.mp3')
+                pygame.mixer.music.play()
+                pyautogui.alert(text=f'Não houve vencedores\nEMPATE', title='VENCEDOR', button='OK')
+
+            #Verifica se ambos querem continuar
+            resp = pyautogui.confirm('Você Deseja Continuar?', buttons=['Yes', 'No'])
+            if resp == "No":
+                s.send("N".encode())
+                quit()
+            else:
+                s.send("S".encode())
+                server_resp = s.recv(1).decode()
+                if server_resp =="S":
+                    reset_board()
+                    game_status ="C"
+                    pyautogui.alert(text=f'JOGADOR {turn} É O PRIMEIRO A JOGAR', title='PRIMEIRO_TURNO', button='OK')
+                else:
+                    pyautogui.alert(text=f'O outro jogador não quer reiniciar partida', title='RESULTADO', button='OK')
+                    quit()
         pygame.display.flip()
        
 
