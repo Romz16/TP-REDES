@@ -4,7 +4,7 @@ import random
 
 HOST = "127.0.0.1"
 
-PORT = 55555
+PORT = 55554
 
 # Inicializa o tabuleiro do jogo da velha
 board = ['', '', '',
@@ -25,7 +25,7 @@ print(f'Conexão estabelecida com {cliente1_endereco}')
 cliente2_socket, cliente2_endereco = servidor_socket.accept()
 print(f'Conexão estabelecida com {cliente2_endereco}')
 
-
+#Responsavel por enviar para ambos usuarios
 def send_all(parametro):
     cliente1_socket.send(parametro.encode())
     cliente2_socket.send(parametro.encode())
@@ -65,6 +65,7 @@ send_player_symbols()
 first_turn_message = f"{turn}"
 send_all(first_turn_message)
 
+#Responsavel por receber as jogdas e alterar turnos
 def receber_jogada(turn, player_symbol, socket_atual, socket_oponente, board):
     data = socket_atual.recv(3).decode()
     coordinates = data.split('-')
@@ -103,3 +104,4 @@ while True:
     
         
     
+
